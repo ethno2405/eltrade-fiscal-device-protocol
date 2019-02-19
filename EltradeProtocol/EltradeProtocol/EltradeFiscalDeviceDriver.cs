@@ -70,7 +70,6 @@ namespace EltradeProtocol
         {
             if (serialPort.IsOpen)
             {
-                Console.WriteLine("Closing port!");
                 serialPort.Close();
             }
         }
