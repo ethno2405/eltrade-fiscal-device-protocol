@@ -19,13 +19,7 @@ namespace EltradeProtocol
 
         public EltradeFiscalDeviceDriver()
         {
-            var portName = FindFiscalDevicePort();
-            serialPort = new SerialPort(portName, 115200, Parity.None, 8, StopBits.One);
-
-            serialPort.ReadTimeout = 500;
-            serialPort.WriteTimeout = 500;
-            serialPort.Encoding = Encoding.ASCII;
-            serialPort.ErrorReceived += SerialPort_ErrorReceived;
+            FindFiscalDevicePort();
 
             readTimer.Interval = serialPort.ReadTimeout;
             readTimer.Elapsed += Timer_Elapsed;
@@ -51,22 +45,29 @@ namespace EltradeProtocol
             return response;
         }
 
-        private string FindFiscalDevicePort()
+        private void FindFiscalDevicePort()
         {
             var package = new EltradeFiscalDeviceRequestPackage(0x4a);
             var bytes = package.Build();
 
             foreach (var portName in SerialPort.GetPortNames())
             {
-                var port = new SerialPort(portName, 115200, Parity.None, 8, StopBits.One);
-                port.Open();
-                port.Write(bytes, 0, bytes.Length);
-                Thread.Sleep(500);
-                var response = port.ReadExisting();
-                port.Dispose();
+                serialPort = new SerialPort(portName, 115200, Parity.None, 8, StopBits.One);
+
+                serialPort.ReadTimeout = 500;
+                serialPort.WriteTimeout = 500;
+                serialPort.Encoding = Encoding.ASCII;
+                serialPort.ErrorReceived += SerialPort_ErrorReceived;
+
+                OpenPort();
+                serialPort.Write(bytes, 0, bytes.Length);
+                Thread.Sleep(100);
+                var response = serialPort.ReadExisting();
 
                 if (string.IsNullOrEmpty(response) == false)
-                    return portName;
+                    return;
+
+                serialPort.Dispose();
             }
 
             throw new InvalidOperationException("Unable to connect to fiscal device.");
@@ -86,11 +87,11 @@ namespace EltradeProtocol
                     }
                     catch (UnauthorizedAccessException)
                     {
-                        if (attempts >= 5)
+                        if (attempts >= 10)
                             throw;
 
                         attempts++;
-                        Thread.Sleep(100 * attempts);
+                        Thread.Sleep(1000 * attempts);
                     }
                 }
             }
