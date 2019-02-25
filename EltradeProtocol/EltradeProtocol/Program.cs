@@ -5,12 +5,8 @@ namespace EltradeProtocol
 {
     public static class Program
     {
-        static EltradeFiscalDeviceDriver driver;
-
         static void Main(string[] args)
         {
-            driver = new EltradeFiscalDeviceDriver("COM4");
-            driver.OnRead += Driver_OnRead;
             Console.WriteLine("Type 'q' to exit");
 
             while (true)
@@ -29,14 +25,13 @@ namespace EltradeProtocol
                 var package = new EltradeFiscalDeviceRequestPackage((byte)cmd, data);
 
                 Console.WriteLine("Sending package...");
-                driver.Send(package);
+                using (var driver = new EltradeFiscalDeviceDriver())
+                {
+                    var response = driver.Send(package);
+                    var responsePackage = string.Join(" ", response.Package.Select(x => x.ToString("x2")).ToArray());
+                    Console.WriteLine("Response package: " + responsePackage);
+                }
             }
-        }
-
-        private static void Driver_OnRead(object sender, EltradeFiscalDeviceDriver.EltradeOnReadEventArgs e)
-        {
-            var package = string.Join(" ", e.Response.Package.Select(x => x.ToString("x2")).ToArray());
-            Console.WriteLine("Response package: " + package);
         }
     }
 }

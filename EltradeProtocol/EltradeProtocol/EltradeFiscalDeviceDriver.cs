@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.IO.Ports;
 using System.Linq;
 using System.Text;
@@ -6,23 +7,24 @@ using System.Threading;
 
 namespace EltradeProtocol
 {
-    public class EltradeFiscalDeviceDriver
+    public class EltradeFiscalDeviceDriver : IDisposable
     {
         private const byte SYN = 0x16;
         private SerialPort serialPort;
         private int attempts = 0;
         private System.Timers.Timer readTimer = new System.Timers.Timer();
+        private bool reading;
+        private Thread readThread;
+        private EltradeFiscalDeviceResponsePackage response;
 
-        public EltradeFiscalDeviceDriver(string portName)
+        public EltradeFiscalDeviceDriver()
         {
-            if (string.IsNullOrEmpty(portName)) throw new ArgumentNullException(nameof(portName));
-
+            var portName = FindFiscalDevicePort();
             serialPort = new SerialPort(portName, 115200, Parity.None, 8, StopBits.One);
 
             serialPort.ReadTimeout = 500;
             serialPort.WriteTimeout = 500;
             serialPort.Encoding = Encoding.ASCII;
-            serialPort.DataReceived += SerialPort_DataReceived;
             serialPort.ErrorReceived += SerialPort_ErrorReceived;
 
             readTimer.Interval = serialPort.ReadTimeout;
@@ -30,16 +32,44 @@ namespace EltradeProtocol
             readTimer.AutoReset = true;
         }
 
-        public event EventHandler<EltradeOnReadEventArgs> OnRead;
-
-        public void Send(EltradeFiscalDeviceRequestPackage package)
+        public EltradeFiscalDeviceResponsePackage Send(EltradeFiscalDeviceRequestPackage package)
         {
             if (ReferenceEquals(null, package)) throw new ArgumentNullException(nameof(package));
 
+            readThread = new Thread(Read);
             OpenPort();
+            response = EltradeFiscalDeviceResponsePackage.Empty;
             var bytes = package.Build();
+            readThread.Start();
+            reading = true;
+
             serialPort.Write(bytes, 0, bytes.Length);
+
             readTimer.Start();
+            readThread.Join();
+
+            return response;
+        }
+
+        private string FindFiscalDevicePort()
+        {
+            var package = new EltradeFiscalDeviceRequestPackage(0x4a);
+            var bytes = package.Build();
+
+            foreach (var portName in SerialPort.GetPortNames())
+            {
+                var port = new SerialPort(portName, 115200, Parity.None, 8, StopBits.One);
+                port.Open();
+                port.Write(bytes, 0, bytes.Length);
+                Thread.Sleep(500);
+                var response = port.ReadExisting();
+                port.Dispose();
+
+                if (string.IsNullOrEmpty(response) == false)
+                    return portName;
+            }
+
+            throw new InvalidOperationException("Unable to connect to fiscal device.");
         }
 
         private void OpenPort()
@@ -70,7 +100,11 @@ namespace EltradeProtocol
         {
             if (serialPort.IsOpen)
             {
-                serialPort.Close();
+                try
+                {
+                    serialPort.Close();
+                }
+                catch (IOException) { }
             }
         }
 
@@ -80,28 +114,35 @@ namespace EltradeProtocol
             ClosePort();
         }
 
-        private void SerialPort_DataReceived(object sender, SerialDataReceivedEventArgs e)
+        private void Read()
         {
             var buffer = new byte[serialPort.ReadBufferSize];
-
-            try
+            while (reading)
             {
-                var readBytes = serialPort.Read(buffer, 0, serialPort.ReadBufferSize);
-                if (buffer[0] == SYN)
+                try
                 {
-                    readTimer.Interval += 60;
-                    return;
+                    buffer = new byte[serialPort.ReadBufferSize];
+                    var readBytes = serialPort.Read(buffer, 0, serialPort.ReadBufferSize);
+                    if (buffer[0] == SYN)
+                    {
+                        readTimer.Interval += 60;
+                        continue;
+                    }
+
+                    response = new EltradeFiscalDeviceResponsePackage(buffer.Take(readBytes).ToArray());
                 }
-
-                var response = new EltradeFiscalDeviceResponsePackage(buffer.Take(readBytes).ToArray());
-                OnRead(this, new EltradeOnReadEventArgs(response));
-            }
-            catch (TimeoutException) { }
-            finally
-            {
-                if (buffer[0] != SYN)
+                catch (TimeoutException) { }
+                catch (IOException)
                 {
-                    ClosePort();
+                    reading = false;
+                }
+                finally
+                {
+                    if (buffer[0] != SYN)
+                    {
+                        ClosePort();
+                        reading = false;
+                    }
                 }
             }
         }
@@ -111,16 +152,15 @@ namespace EltradeProtocol
             ClosePort();
         }
 
-        public class EltradeOnReadEventArgs : EventArgs
+        public void Dispose()
         {
-            public EltradeOnReadEventArgs(EltradeFiscalDeviceResponsePackage response) : base()
-            {
-                if (ReferenceEquals(null, response)) throw new ArgumentNullException(nameof(response));
-
-                Response = response;
-            }
-
-            public EltradeFiscalDeviceResponsePackage Response { get; }
+            ClosePort();
+            serialPort?.Dispose();
+            serialPort = null;
+            readTimer?.Dispose();
+            readTimer = null;
+            readThread?.Abort();
+            readThread = null;
         }
     }
 }
