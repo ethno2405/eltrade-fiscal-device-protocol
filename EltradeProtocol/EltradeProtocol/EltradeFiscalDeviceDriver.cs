@@ -9,7 +9,6 @@ namespace EltradeProtocol
 {
     public class EltradeFiscalDeviceDriver : IDisposable
     {
-        private const byte SYN = 0x16;
         private SerialPort serialPort;
         private int attempts = 0;
         private System.Timers.Timer readTimer = new System.Timers.Timer();
@@ -142,13 +141,13 @@ namespace EltradeProtocol
                 {
                     buffer = new byte[serialPort.ReadBufferSize];
                     var readBytes = serialPort.Read(buffer, 0, serialPort.ReadBufferSize);
-                    if (buffer[0] == SYN)
+                    response = new EltradeFiscalDeviceResponsePackage(buffer.Take(readBytes).ToArray());
+                    if (response.Printing)
                     {
                         readTimer.Interval += 60;
                         continue;
                     }
 
-                    response = new EltradeFiscalDeviceResponsePackage(buffer.Take(readBytes).ToArray());
                 }
                 catch (TimeoutException) { }
                 catch (IOException)
@@ -157,7 +156,7 @@ namespace EltradeProtocol
                 }
                 finally
                 {
-                    if (buffer[0] != SYN)
+                    if (response.Printing == false)
                     {
                         ClosePort();
                         reading = false;
