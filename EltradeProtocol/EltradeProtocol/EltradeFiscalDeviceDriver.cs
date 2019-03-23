@@ -150,10 +150,11 @@ namespace EltradeProtocol
                     response = new EltradeFiscalDeviceResponsePackage(buffer.Take(readBytes).ToArray());
                     if (response.Printing)
                     {
-                        readTimer.Interval += 60;
+                        if (readTimer.Interval <= 10000)
+                            readTimer.Interval += 60;
+
                         continue;
                     }
-
                 }
                 catch (TimeoutException) { }
                 catch (IOException)
