@@ -26,6 +26,25 @@ namespace EltradeProtocol
             readTimer.AutoReset = true;
         }
 
+        public static bool Ping()
+        {
+            EltradeFiscalDeviceDriver driver = null;
+            try
+            {
+                driver = new EltradeFiscalDeviceDriver();
+                var response = driver.Send(EltradeFiscalDeviceRequestPackage.Status);
+                return response.Package.Length > 0;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+            finally
+            {
+                driver?.Dispose();
+            }
+        }
+
         public EltradeFiscalDeviceResponsePackage Send(EltradeFiscalDeviceRequestPackage package)
         {
             if (ReferenceEquals(null, package)) throw new ArgumentNullException(nameof(package));
@@ -47,8 +66,7 @@ namespace EltradeProtocol
 
         private void FindFiscalDevicePort()
         {
-            var package = new EltradeFiscalDeviceRequestPackage(0x4a);
-            var bytes = package.Build();
+            var bytes = EltradeFiscalDeviceRequestPackage.Status.Build();
 
             foreach (var portName in SerialPort.GetPortNames())
             {

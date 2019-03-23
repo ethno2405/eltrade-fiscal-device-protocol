@@ -10,6 +10,7 @@ namespace EltradeProtocol
         public const byte Preamble = 0x1;
         public const byte Postamble = 0x5;
         public const byte Terminator = 0x3;
+        public static readonly EltradeFiscalDeviceRequestPackage Status = new EltradeFiscalDeviceRequestPackage(0x4a, "W");
 
         static EltradeFiscalDeviceRequestPackage()
         {
