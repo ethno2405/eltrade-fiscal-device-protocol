@@ -77,14 +77,20 @@ namespace EltradeProtocol
                 serialPort.ErrorReceived += SerialPort_ErrorReceived;
 
                 OpenPort();
-                serialPort.Write(bytes, 0, bytes.Length);
-                Thread.Sleep(100);
-                var response = serialPort.ReadExisting();
+                try
+                {
+                    serialPort.Write(bytes, 0, bytes.Length);
+                    Thread.Sleep(100);
+                    var response = serialPort.ReadExisting();
 
-                if (string.IsNullOrEmpty(response) == false)
-                    return;
-
-                serialPort.Dispose();
+                    if (string.IsNullOrEmpty(response) == false)
+                        return;
+                }
+                catch (IOException) { }
+                finally
+                {
+                    serialPort?.Dispose();
+                }
             }
 
             throw new InvalidOperationException("Unable to connect to fiscal device.");
