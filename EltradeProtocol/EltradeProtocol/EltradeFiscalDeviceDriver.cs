@@ -51,7 +51,7 @@ namespace EltradeProtocol
             readThread = new Thread(Read);
             OpenPort();
             response = EltradeFiscalDeviceResponsePackage.Empty;
-            var bytes = package.Build();
+            var bytes = package.Build(true);
             readThread.Start();
             reading = true;
 

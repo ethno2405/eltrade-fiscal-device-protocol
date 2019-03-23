@@ -7,6 +7,7 @@ namespace EltradeProtocol
 {
     public class EltradeFiscalDeviceRequestPackage
     {
+        private static byte previousCommand;
         public const byte Preamble = 0x1;
         public const byte Postamble = 0x5;
         public const byte Terminator = 0x3;
@@ -47,13 +48,24 @@ namespace EltradeProtocol
 
         public byte[] Build()
         {
-            NextSeq();
+            return Build(false);
+        }
+
+        public byte[] Build(bool nextSeq)
+        {
+            if (nextSeq)
+                NextSeq();
+
             var package = ComposePackage();
             return package;
         }
 
         private void NextSeq()
         {
+            if (Command == previousCommand)
+                return;
+
+            previousCommand = Command;
             Seq++;
 
             if (Seq > 0x7f)
