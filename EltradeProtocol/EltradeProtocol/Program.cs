@@ -9,7 +9,7 @@ namespace EltradeProtocol
 
         static void Main(string[] args)
         {
-            Console.WriteLine("Type 'q' to exit");
+            driver = new EltradeFiscalDeviceDriver();
 
             while (true)
             {
@@ -18,23 +18,37 @@ namespace EltradeProtocol
                 if ("q".Equals(message, StringComparison.OrdinalIgnoreCase))
                     break;
 
-                var parts = message.Split(" ".ToCharArray(), StringSplitOptions.RemoveEmptyEntries);
-                if (parts.Length == 0)
-                    continue;
-
-                var cmd = int.Parse(parts[0]);
-                var data = string.Join(string.Empty, parts.Skip(1).ToArray());
-                var package = new EltradeFiscalDeviceRequestPackage((byte)cmd, data);
-
-                Console.WriteLine("Sending package...");
-                driver = new EltradeFiscalDeviceDriver();
-
-                var response = driver.Send(package);
-                var responsePackage = string.Join(" ", response.Package.Select(x => x.ToString("x2")).ToArray());
-                Console.WriteLine("Response package: " + responsePackage);
+                if ("p".Equals(message, StringComparison.OrdinalIgnoreCase))
+                {
+                    Console.WriteLine("Sending package...");
+                    var response = driver.Send(EltradeFiscalDeviceRequestPackage.SetCurrentDateTime);
+                    PrintResponse(response);
+                }
             }
 
             driver?.Dispose();
+        }
+
+        static void PrintResponse(EltradeFiscalDeviceResponsePackage response)
+        {
+            Print("Response package", response.Package);
+            Print("Data package", response.Data);
+            Print("Status package", response.Status);
+            PrintFlags("Data flags", response.Data);
+            PrintFlags("Status flags", response.Status);
+            Console.WriteLine();
+        }
+
+        static void Print(string type, byte[] bytes, string format = "x2")
+        {
+            var package = string.Join(" ", bytes.Select(x => x.ToString(format)).ToArray());
+            Console.WriteLine($"{type}: " + package);
+        }
+
+        static void PrintFlags(string type, byte[] bytes)
+        {
+            var package = string.Join(" ", bytes.Select(x => Convert.ToString(x, 2).PadLeft(8, '0')).ToArray());
+            Console.WriteLine($"{type}: " + package);
         }
     }
 }
