@@ -109,30 +109,14 @@ namespace EltradeProtocol
         private byte[] CalculateBlockCheckCharacter()
         {
             var sum = Length + Seq + Command + Data.Sum(x => x) + Postamble;
-            var digits = SplitIntoHexDigits((byte)sum);
 
-            if (digits.Length > 4) throw new InvalidOperationException("BCC can not be more than 4 bytes");
+            var bcc = new byte[4];
+            bcc[3] = (byte)(((sum & 0xf) >> 0) + 0x30);
+            bcc[2] = (byte)(((sum & 0xf0) >> 4) + 0x30);
+            bcc[1] = (byte)(((sum & 0xf00) >> 8) + 0x30);
+            bcc[0] = (byte)(((sum & 0xf000) >> 12) + 0x30);
 
-            var bcc = new List<byte>(digits.Select(x => (byte)(x + 0x30)));
-            while (bcc.Count < 4)
-            {
-                bcc.Insert(0, 0x30);
-            }
-
-            return bcc.ToArray();
-        }
-
-        private byte[] SplitIntoHexDigits(byte num)
-        {
-            var digits = new List<byte>();
-            while (num > 0)
-            {
-                digits.Add((byte)(num % 0x10));
-                num = (byte)(num / 0x10);
-            }
-
-            digits.Reverse();
-            return digits.ToArray();
+            return bcc;
         }
     }
 }
