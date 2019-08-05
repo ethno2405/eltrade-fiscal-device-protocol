@@ -35,7 +35,7 @@
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Command.cs" />
+    <Compile Include="DeviceCommand.cs" />
     <Compile Include="EltradeFiscalDeviceDriver.cs" />
     <Compile Include="EltradeFiscalDeviceRequestPackage.cs" />
     <Compile Include="EltradeFiscalDeviceResponsePackage.cs" />
