@@ -4,6 +4,7 @@ using System.IO.Ports;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using EltradeProtocol.Requests;
 
 namespace EltradeProtocol
 {
@@ -31,7 +32,7 @@ namespace EltradeProtocol
             try
             {
                 driver = new EltradeFiscalDeviceDriver();
-                var response = driver.Send(EltradeFiscalDeviceRequestPackage.Status);
+                var response = driver.Send(new GetStatuses("W"));
                 return response.Package.Length > 0;
             }
             catch (Exception)
@@ -65,7 +66,7 @@ namespace EltradeProtocol
 
         private void FindFiscalDevicePort()
         {
-            var bytes = EltradeFiscalDeviceRequestPackage.Status.Build();
+            var bytes = new GetStatuses("W").Build();
 
             foreach (var portName in SerialPort.GetPortNames())
             {

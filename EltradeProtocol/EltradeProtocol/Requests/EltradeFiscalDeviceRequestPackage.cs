@@ -3,20 +3,22 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace EltradeProtocol
+namespace EltradeProtocol.Requests
 {
     public class EltradeFiscalDeviceRequestPackage
     {
-        private static byte previousCommand;
-        public const byte Preamble = 0x1;
-        public const byte Postamble = 0x5;
-        public const byte Terminator = 0x3;
-        public static readonly EltradeFiscalDeviceRequestPackage Status = new EltradeFiscalDeviceRequestPackage(DeviceCommand.GetStatuses, "W");
-        public static readonly EltradeFiscalDeviceRequestPackage SetCurrentDateTime = new EltradeFiscalDeviceRequestPackage(DeviceCommand.SetDateTime, DateTime.Now.ToString("dd-MM-y HH:mm:ss"));
+        private const byte Preamble = 0x1;
+        private const byte Postamble = 0x5;
+        private const byte Terminator = 0x3;
+        private const byte StartSeq = 0x20;
+        private const byte EndSeq = 0x7f;
+        private const byte LengthOffset = 0x24;
+        private const byte Escape = 0x10;
+        private const byte EscapeOffset = 0x40;
 
         static EltradeFiscalDeviceRequestPackage()
         {
-            Seq = 0x20;
+            Seq = StartSeq;
         }
 
         public EltradeFiscalDeviceRequestPackage(byte command)
@@ -29,23 +31,24 @@ namespace EltradeProtocol
         {
             if (data.Length == 0) throw new ArgumentNullException(nameof(data));
 
-            Data = EscapeData(data);
+            Data = data;
         }
 
         public EltradeFiscalDeviceRequestPackage(byte command, string data) : this(command)
         {
             if (string.IsNullOrEmpty(data) == false)
             {
-                var bytes = Encoding.ASCII.GetBytes(data);
-                Data = EscapeData(bytes);
+                var bytes = Windows1251.GetBytes(data);
+                Data = bytes;
             }
         }
 
         public byte Command { get; }
-        public byte[] Data { get; }
+        public byte[] Data { get; protected set; }
         public static byte Seq { get; private set; }
         public bool HasData { get { return Data.Length > 0; } }
-        public byte Length { get { return (byte)(Data.Length + 0x24); } }
+        public byte Length { get { return (byte)(Data.Length + LengthOffset); } }
+        protected Encoding Windows1251 { get; } = Encoding.GetEncoding("windows-1251");
 
         public byte[] Build()
         {
@@ -61,16 +64,36 @@ namespace EltradeProtocol
             return package;
         }
 
+        protected string Truncate(string value, int length)
+        {
+            if (string.IsNullOrEmpty(value)) return value;
+
+            return value.Length <= length ? value : value.Substring(0, length);
+        }
+
+        protected byte[] EscapeData(byte[] data)
+        {
+            var escapedData = new List<byte>();
+            foreach (var item in data)
+            {
+                if (item < 0x20)
+                {
+                    escapedData.Add(Escape);
+                    escapedData.Add((byte)(item + EscapeOffset));
+                }
+                else
+                    escapedData.Add(item);
+            }
+
+            return escapedData.ToArray();
+        }
+
         private void NextSeq()
         {
-            if (Command == previousCommand)
-                return;
-
-            previousCommand = Command;
             Seq++;
 
-            if (Seq > 0x7f)
-                Seq = 0x20;
+            if (Seq > EndSeq)
+                Seq = StartSeq;
         }
 
         private byte[] ComposePackage() // <01><LEN><SEQ><CMD><DATA><05><BCC><03>
@@ -88,23 +111,6 @@ namespace EltradeProtocol
             package.Add(Terminator);
 
             return package.ToArray();
-        }
-
-        private byte[] EscapeData(byte[] data)
-        {
-            var escapedData = new List<byte>();
-            foreach (var item in data)
-            {
-                if (item < 0x20)
-                {
-                    escapedData.Add(0x10);
-                    escapedData.Add((byte)(item + 0x40));
-                }
-                else
-                    escapedData.Add(item);
-            }
-
-            return escapedData.ToArray();
         }
 
         private byte[] CalculateBlockCheckCharacter()

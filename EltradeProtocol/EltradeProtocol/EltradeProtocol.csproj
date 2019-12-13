@@ -35,11 +35,18 @@
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="DeviceCommand.cs" />
+    <Compile Include="Requests\GetFiscalTransactionStatus.cs" />
+    <Compile Include="Requests\GetStatuses.cs" />
+    <Compile Include="Requests\CloseFiscalReceipt.cs" />
+    <Compile Include="DiscountType.cs" />
     <Compile Include="EltradeFiscalDeviceDriver.cs" />
-    <Compile Include="EltradeFiscalDeviceRequestPackage.cs" />
+    <Compile Include="Requests\EltradeFiscalDeviceRequestPackage.cs" />
     <Compile Include="EltradeFiscalDeviceResponsePackage.cs" />
+    <Compile Include="Requests\OpenFiscalReceipt.cs" />
+    <Compile Include="Requests\OpenRefundReceipt.cs" />
     <Compile Include="Program.cs" />
+    <Compile Include="Requests\RegisterArticle.cs" />
+    <Compile Include="Requests\SetDateTime.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Properties\" />
