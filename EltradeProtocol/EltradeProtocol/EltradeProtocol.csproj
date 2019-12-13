@@ -35,10 +35,10 @@
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Requests\CalculateTotal.cs" />
     <Compile Include="Requests\GetFiscalTransactionStatus.cs" />
     <Compile Include="Requests\GetStatuses.cs" />
     <Compile Include="Requests\CloseFiscalReceipt.cs" />
-    <Compile Include="DiscountType.cs" />
     <Compile Include="EltradeFiscalDeviceDriver.cs" />
     <Compile Include="Requests\EltradeFiscalDeviceRequestPackage.cs" />
     <Compile Include="EltradeFiscalDeviceResponsePackage.cs" />
