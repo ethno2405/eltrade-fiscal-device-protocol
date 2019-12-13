@@ -7,6 +7,7 @@ namespace EltradeProtocol.Requests
 {
     public class EltradeFiscalDeviceRequestPackage
     {
+        private Encoding windows1251 = Encoding.GetEncoding("windows-1251");
         private const byte Preamble = 0x1;
         private const byte Postamble = 0x5;
         private const byte Terminator = 0x3;
@@ -15,7 +16,7 @@ namespace EltradeProtocol.Requests
         private const byte LengthOffset = 0x24;
         private const byte Escape = 0x10;
         private const byte EscapeOffset = 0x40;
-        private Encoding windows1251 = Encoding.GetEncoding("windows-1251");
+
         protected const byte LineFeed = 0x0a;
         protected const byte Tab = 0x09;
 
@@ -30,20 +31,10 @@ namespace EltradeProtocol.Requests
             Data = new byte[] { };
         }
 
-        public EltradeFiscalDeviceRequestPackage(byte command, params byte[] data) : this(command)
-        {
-            if (data.Length == 0) throw new ArgumentNullException(nameof(data));
-
-            Data = data;
-        }
-
         public EltradeFiscalDeviceRequestPackage(byte command, string data) : this(command)
         {
             if (string.IsNullOrEmpty(data) == false)
-            {
-                var bytes = windows1251.GetBytes(data);
-                Data = bytes;
-            }
+                AppendData(data);
         }
 
         public byte Command { get; }
@@ -66,9 +57,11 @@ namespace EltradeProtocol.Requests
             return package;
         }
 
-        protected void AppendData(string value)
+        protected void AppendData(string data)
         {
-            Data = Data.Concat(windows1251.GetBytes(value)).ToArray();
+            if (string.IsNullOrEmpty(data)) throw new ArgumentNullException(nameof(data));
+
+            Data = Data.Concat(windows1251.GetBytes(data)).ToArray();
         }
 
         protected void AppendData(byte value)
