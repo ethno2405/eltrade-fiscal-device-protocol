@@ -15,6 +15,7 @@ namespace EltradeProtocol.Requests
         private const byte LengthOffset = 0x24;
         private const byte Escape = 0x10;
         private const byte EscapeOffset = 0x40;
+        private Encoding windows1251 = Encoding.GetEncoding("windows-1251");
         protected const byte LineFeed = 0x0a;
         protected const byte Tab = 0x09;
 
@@ -40,7 +41,7 @@ namespace EltradeProtocol.Requests
         {
             if (string.IsNullOrEmpty(data) == false)
             {
-                var bytes = Windows1251.GetBytes(data);
+                var bytes = windows1251.GetBytes(data);
                 Data = bytes;
             }
         }
@@ -50,7 +51,6 @@ namespace EltradeProtocol.Requests
         public static byte Seq { get; private set; }
         public bool HasData { get { return Data.Length > 0; } }
         public byte Length { get { return (byte)(Data.Length + LengthOffset); } }
-        protected Encoding Windows1251 { get; } = Encoding.GetEncoding("windows-1251");
 
         public byte[] Build()
         {
@@ -66,12 +66,12 @@ namespace EltradeProtocol.Requests
             return package;
         }
 
-        protected void Append(string value)
+        protected void AppendData(string value)
         {
-            Data = Data.Concat(Windows1251.GetBytes(value)).ToArray();
+            Data = Data.Concat(windows1251.GetBytes(value)).ToArray();
         }
 
-        protected void Append(byte value)
+        protected void AppendData(byte value)
         {
             Data = Data.Concat(new byte[] { value }).ToArray();
         }

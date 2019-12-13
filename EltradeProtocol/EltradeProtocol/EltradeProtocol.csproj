@@ -35,6 +35,7 @@
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Requests\AddFreeTextToFiscalReceipt.cs" />
     <Compile Include="Requests\CalculateTotal.cs" />
     <Compile Include="Requests\CashTransfer.cs" />
     <Compile Include="Requests\GetFiscalTransactionStatus.cs" />

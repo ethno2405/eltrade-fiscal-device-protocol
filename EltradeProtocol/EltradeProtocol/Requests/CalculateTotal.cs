@@ -8,30 +8,30 @@ namespace EltradeProtocol.Requests
         {
             if (amount <= 0) throw new ArgumentOutOfRangeException(nameof(amount), $"Payment amount '{amount}' must be positive");
 
-            Append(Truncate(line1, 36));
-            Append(LineFeed);
-            Append(Truncate(line2, 36));
-            Append(Tab);
+            AppendData(Truncate(line1, 36));
+            AppendData(LineFeed);
+            AppendData(Truncate(line2, 36));
+            AppendData(Tab);
 
             switch (paymentType)
             {
                 case PaymentType.Cash:
-                    Append("P");
+                    AppendData("P");
                     break;
                 case PaymentType.BankTransfer:
-                    Append("M");
+                    AppendData("M");
                     break;
                 case PaymentType.CreditCard:
-                    Append("L");
+                    AppendData("L");
                     break;
                 case PaymentType.Cheque:
-                    Append("N");
+                    AppendData("N");
                     break;
                 default:
                     throw new NotSupportedException($"Not supported payment type '{paymentType}'");
             }
 
-            Append(amount.ToString());
+            AppendData(amount.ToString());
         }
 
         public enum PaymentType

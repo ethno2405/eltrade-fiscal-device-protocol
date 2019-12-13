@@ -8,22 +8,22 @@ namespace EltradeProtocol.Requests
 
         public RegisterArticle(string articleName, string articleDescription, char taxType, decimal unitPrice, decimal quantity, decimal discount, DiscountType discountType) : base(0x31)
         {
-            Append(Truncate(articleName, 30));
-            Append(LineFeed);
-            Append(Truncate(articleDescription, 30));
-            Append(Tab);
-            Append(taxType.ToString());
-            Append(unitPrice.ToString());
+            AppendData(Truncate(articleName, 30));
+            AppendData(LineFeed);
+            AppendData(Truncate(articleDescription, 30));
+            AppendData(Tab);
+            AppendData(taxType.ToString());
+            AppendData(unitPrice.ToString());
 
             if (quantity != 1)
-                Append($"*{quantity}");
+                AppendData($"*{quantity}");
 
             if (discount != 0)
             {
                 if (discountType == DiscountType.Absolute)
-                    Append($";{discount}");
+                    AppendData($";{discount}");
                 else if (discountType == DiscountType.Relative)
-                    Append($",{discount}");
+                    AppendData($",{discount}");
                 else
                     throw new NotSupportedException($"Not supported discount type '{discountType}'");
             }
