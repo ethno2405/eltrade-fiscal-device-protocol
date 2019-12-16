@@ -48,6 +48,7 @@
     <Compile Include="Requests\OpenOperatorErrorReceipt.cs" />
     <Compile Include="Requests\OpenRefundReceipt.cs" />
     <Compile Include="Program.cs" />
+    <Compile Include="Requests\PrintDuplicateReceipt.cs" />
     <Compile Include="Requests\RegisterArticle.cs" />
     <Compile Include="Requests\SetDateTime.cs" />
   </ItemGroup>
