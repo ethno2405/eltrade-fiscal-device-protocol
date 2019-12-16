@@ -4,14 +4,22 @@ namespace EltradeProtocol.Requests
 {
     public class CalculateTotal : EltradeFiscalDeviceRequestPackage
     {
-        public CalculateTotal(string line1, string line2, PaymentType paymentType, decimal amount) : base(0x35)
+        public CalculateTotal() : base(0x35)
         {
-            if (amount < 0) throw new ArgumentOutOfRangeException(nameof(amount), $"Payment amount '{amount}' must be non-negative");
+            AppendData(Tab);
+        }
 
+        public CalculateTotal(string line1, string line2) : base(0x35)
+        {
             AppendData(Truncate(line1, 36));
             AppendData(LineFeed);
             AppendData(Truncate(line2, 36));
             AppendData(Tab);
+        }
+
+        public CalculateTotal(string line1, string line2, PaymentType paymentType, decimal amount) : this(line1, line2)
+        {
+            if (amount < 0) throw new ArgumentOutOfRangeException(nameof(amount), $"Payment amount '{amount}' must be non-negative");
 
             switch (paymentType)
             {
