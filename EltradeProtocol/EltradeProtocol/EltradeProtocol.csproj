@@ -48,6 +48,8 @@
     <Compile Include="Requests\OpenOperatorErrorReceipt.cs" />
     <Compile Include="Requests\OpenRefundReceipt.cs" />
     <Compile Include="Program.cs" />
+    <Compile Include="Requests\PrintDailyReportByDepartments.cs" />
+    <Compile Include="Requests\PrintDailyReportByDepartmentsAndArticles.cs" />
     <Compile Include="Requests\PrintDaylyReport.cs" />
     <Compile Include="Requests\PrintDuplicateReceipt.cs" />
     <Compile Include="Requests\RegisterArticle.cs" />
