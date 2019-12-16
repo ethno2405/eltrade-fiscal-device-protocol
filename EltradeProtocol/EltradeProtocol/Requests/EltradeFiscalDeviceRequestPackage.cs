@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
@@ -59,7 +58,8 @@ namespace EltradeProtocol.Requests
 
         protected void AppendData(string data)
         {
-            if (string.IsNullOrEmpty(data)) throw new ArgumentNullException(nameof(data));
+            if (string.IsNullOrEmpty(data))
+                return;
 
             Data = Data.Concat(windows1251.GetBytes(data)).ToArray();
         }

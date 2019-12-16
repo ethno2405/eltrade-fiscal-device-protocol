@@ -6,7 +6,7 @@ namespace EltradeProtocol.Requests
     {
         public CalculateTotal(string line1, string line2, PaymentType paymentType, decimal amount) : base(0x35)
         {
-            if (amount <= 0) throw new ArgumentOutOfRangeException(nameof(amount), $"Payment amount '{amount}' must be positive");
+            if (amount < 0) throw new ArgumentOutOfRangeException(nameof(amount), $"Payment amount '{amount}' must be non-negative");
 
             AppendData(Truncate(line1, 36));
             AppendData(LineFeed);

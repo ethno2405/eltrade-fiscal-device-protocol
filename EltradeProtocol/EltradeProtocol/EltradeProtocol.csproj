@@ -45,6 +45,7 @@
     <Compile Include="Requests\EltradeFiscalDeviceRequestPackage.cs" />
     <Compile Include="EltradeFiscalDeviceResponsePackage.cs" />
     <Compile Include="Requests\OpenFiscalReceipt.cs" />
+    <Compile Include="Requests\OpenOperatorErrorReceipt.cs" />
     <Compile Include="Requests\OpenRefundReceipt.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Requests\RegisterArticle.cs" />
