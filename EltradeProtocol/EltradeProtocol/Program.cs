@@ -18,17 +18,20 @@ namespace EltradeProtocol
             Console.WriteLine("Sending package...");
 
             Send(new SetDateTime());
-
-            Send(new OpenFiscalReceipt("qwe", "ED325011-0050-0000002"));
-            Send(new AddFreeTextToFiscalReceipt("goliam bahur"));
-            Send(new RegisterArticle("bahur", "mazen", 'Б', 5.68m, 3));
-            Send(new RegisterArticle("salam", "", 'Б', 10, 2));
-            Send(new RegisterArticle("bahur1", "", 'Б', 20.0m, 2, -10.5m, RegisterArticle.DiscountType.Relative));
-            Send(new AddFreeTextToFiscalReceipt("mnogo goliam bahur"));
-            Send(new CalculateTotal("Line 1", "Line 2", CalculateTotal.PaymentType.Cash, 500.60m));
+            Send(new OpenFiscalReceipt("qwe", "ED325011-0050-0000011"));
+            Send(new AddFreeTextToFiscalReceipt("Коментар"));
+            Send(new RegisterArticle("Бахур", "със сланина", 'Б', 5.68m, 3));
+            Send(new RegisterArticle("Салам", "", 'Б', 10, 2));
+            Send(new RegisterArticle("Кучешка радост", "", 'Б', 20.0m, 2, -10.5m, RegisterArticle.DiscountType.Relative));
+            Send(new AddFreeTextToFiscalReceipt("Втори коментар"));
+            Send(new CalculateTotal("", "", CalculateTotal.PaymentType.Cash, 500.60m));
             Send(new CloseFiscalReceipt());
 
-            //Send(new CashTransfer(-100));
+            Send(new PrintDailyReportByDepartmentsAndArticles());
+            //Send(new OpenOperatorErrorReceipt("asdf", "ED325011-0050-0000010", "44325011", 1372));
+            ////Send(new RegisterArticle("Бахур", "със сланина", 'Б', 5.68m, 1));
+            //Send(new CalculateTotal());
+            //Send(new CloseFiscalReceipt());
 
             driver?.Dispose();
 
