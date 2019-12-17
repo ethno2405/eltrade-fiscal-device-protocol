@@ -38,6 +38,7 @@ namespace EltradeProtocol.Requests
 
         public byte Command { get; }
         public byte[] Data { get; private set; }
+        public string DataString { get { return windows1251.GetString(Data); } }
         public static byte Seq { get; private set; }
         public bool HasData { get { return Data.Length > 0; } }
         public byte Length { get { return (byte)(Data.Length + LengthOffset); } }

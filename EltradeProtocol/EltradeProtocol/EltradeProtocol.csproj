@@ -38,6 +38,7 @@
     <Compile Include="Requests\AddFreeTextToFiscalReceipt.cs" />
     <Compile Include="Requests\CalculateTotal.cs" />
     <Compile Include="Requests\CashTransfer.cs" />
+    <Compile Include="Requests\DiscountType.cs" />
     <Compile Include="Requests\GetFiscalTransactionStatus.cs" />
     <Compile Include="Requests\GetStatuses.cs" />
     <Compile Include="Requests\CloseFiscalReceipt.cs" />
@@ -52,7 +53,8 @@
     <Compile Include="Requests\PrintDailyReportByDepartmentsAndArticles.cs" />
     <Compile Include="Requests\PrintDailyReport.cs" />
     <Compile Include="Requests\PrintDuplicateReceipt.cs" />
-    <Compile Include="Requests\RegisterArticle.cs" />
+    <Compile Include="Requests\RegisterGoods.cs" />
+    <Compile Include="Requests\RegisterPlu.cs" />
     <Compile Include="Requests\SetDateTime.cs" />
   </ItemGroup>
   <ItemGroup>

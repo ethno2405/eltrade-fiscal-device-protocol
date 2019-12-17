@@ -18,21 +18,24 @@ namespace EltradeProtocol
             Console.WriteLine("Sending package...");
 
             Send(new SetDateTime());
-            Send(new OpenFiscalReceipt("qwe", "ED325011-0050-0000011"));
+            Send(new OpenFiscalReceipt("qwe", "ED325011-0050-0000012"));
             Send(new AddFreeTextToFiscalReceipt("Коментар"));
-            Send(new RegisterArticle("Бахур", "със сланина", 'Б', 5.68m, 3));
-            Send(new RegisterArticle("Салам", "", 'Б', 10, 2));
-            Send(new RegisterArticle("Кучешка радост", "", 'Б', 20.0m, 2, -10.5m, RegisterArticle.DiscountType.Relative));
+            Send(new RegisterPlu(1, 1));
+            Send(new RegisterPlu(4444, 1));
+            Send(new RegisterPlu(5555, 1));
+            Send(new RegisterGoods("Салам", "", 'Б', 10, 2));
+            Send(new RegisterGoods("Кучешка радост", "", 'Б', 20.0m, 2, -10.5m, DiscountType.Relative));
             Send(new AddFreeTextToFiscalReceipt("Втори коментар"));
             Send(new CalculateTotal("", "", CalculateTotal.PaymentType.Cash, 500.60m));
             Send(new CloseFiscalReceipt());
 
-            Send(new PrintDailyReportByDepartmentsAndArticles());
-            //Send(new OpenOperatorErrorReceipt("asdf", "ED325011-0050-0000010", "44325011", 1372));
-            ////Send(new RegisterArticle("Бахур", "със сланина", 'Б', 5.68m, 1));
+            //Send(new OpenOperatorErrorReceipt("asdf", "ED325011-0050-0000012", "44325011", 1419));
+            //Send(new RegisterPlu(4444));
+            //Send(new RegisterGoods("Кучешка радост", "", 'Б', 20.0m, 2, -10.5m, DiscountType.Relative));
             //Send(new CalculateTotal());
             //Send(new CloseFiscalReceipt());
 
+            Send(new PrintDailyReportByDepartmentsAndArticles());
             driver?.Dispose();
 
             Console.ReadLine();
@@ -40,9 +43,8 @@ namespace EltradeProtocol
 
         static void Send(EltradeFiscalDeviceRequestPackage pkg)
         {
-            var payload = pkg.Build(false);
-            Console.WriteLine($"Payload: {windows1251.GetString(payload)}");
-            Print($"Package {pkg.GetType().Name}", pkg.Build(false));
+            Print($"Request", pkg.Build(false));
+            Console.WriteLine($"Package {pkg.GetType().Name}: {pkg.Command.ToString("x2")} {pkg.DataString}");
             var response = driver.Send(pkg);
             PrintResponse(response);
         }

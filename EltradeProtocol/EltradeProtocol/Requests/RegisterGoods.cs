@@ -2,11 +2,11 @@
 
 namespace EltradeProtocol.Requests
 {
-    public class RegisterArticle : EltradeFiscalDeviceRequestPackage
+    public class RegisterGoods : EltradeFiscalDeviceRequestPackage
     {
-        public RegisterArticle(string articleName, string articleDescription, char taxType, decimal unitPrice, decimal quantity = 1) : this(articleName, articleDescription, taxType, unitPrice, quantity, 0, DiscountType.Relative) { }
+        public RegisterGoods(string articleName, string articleDescription, char taxType, decimal unitPrice, decimal quantity = 1) : this(articleName, articleDescription, taxType, unitPrice, quantity, 0, DiscountType.Relative) { }
 
-        public RegisterArticle(string articleName, string articleDescription, char taxType, decimal unitPrice, decimal quantity, decimal discount, DiscountType discountType) : base(0x31)
+        public RegisterGoods(string articleName, string articleDescription, char taxType, decimal unitPrice, decimal quantity, decimal discount, DiscountType discountType) : base(0x31)
         {
             AppendData(Truncate(articleName, 30));
             AppendData(LineFeed);
@@ -27,12 +27,6 @@ namespace EltradeProtocol.Requests
                 else
                     throw new NotSupportedException($"Not supported discount type '{discountType}'");
             }
-        }
-
-        public enum DiscountType
-        {
-            Absolute,
-            Relative
         }
     }
 }
