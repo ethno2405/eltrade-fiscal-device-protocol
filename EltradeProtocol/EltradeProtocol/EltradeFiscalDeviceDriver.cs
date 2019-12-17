@@ -4,17 +4,20 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using EltradeProtocol.Requests;
+using log4net;
 
 namespace EltradeProtocol
 {
     public class EltradeFiscalDeviceDriver : IDisposable
     {
+        private static readonly ILog log = LogManager.GetLogger(typeof(EltradeFiscalDeviceDriver));
         private SerialPort serialPort;
         private int attempts = 0;
         private bool reading;
         private Thread readThread;
         private EltradeFiscalDeviceResponsePackage response;
         private static string lastWorkingPort = string.Empty;
+        private static readonly object mutex = new object();
 
         public EltradeFiscalDeviceDriver()
         {
@@ -33,16 +36,24 @@ namespace EltradeProtocol
 
                 var bytes = package.Build(true);
                 reading = true;
-
+                log.Debug($"0x{package.Command.ToString("x2").ToUpper()} => {package.GetType().Name} {package.DataString}");
                 serialPort.Write(bytes, 0, bytes.Length);
 
                 readThread.Start();
                 readThread.Join();
+                if (response.Data.Length != 0)
+                    log.Debug($"Response data: {response.GetHumanReadableData(Encoding.GetEncoding("windows-1251"))}");
+            }
+            catch (Exception ex)
+            {
+                log.Error("PAFA!", ex);
+                throw;
             }
             finally
             {
                 ClosePort();
             }
+
             return response;
         }
 
@@ -92,13 +103,18 @@ namespace EltradeProtocol
 
                         if (string.IsNullOrEmpty(response) == false)
                         {
-                            lastWorkingPort = portName;
+                            lock (mutex)
+                            {
+                                lastWorkingPort = portName;
+                                log.Info($"----------Fiscal device port {lastWorkingPort}----------");
+                            }
+
                             return true;
                         }
 
                         attempts++;
                     }
-                    catch (Exception ex)
+                    catch (Exception)
                     {
                         if (attempts >= 10)
                             throw;
@@ -110,6 +126,7 @@ namespace EltradeProtocol
             }
             catch (Exception ex)
             {
+                log.Error($"Attempt: {attempts}", ex);
             }
             finally
             {
@@ -117,6 +134,7 @@ namespace EltradeProtocol
                 ClosePort();
             }
 
+            log.Error($"Unable to find fiscal device on port {portName}. Check cable connection!");
             return false;
         }
 
@@ -132,7 +150,7 @@ namespace EltradeProtocol
                         attempts = 0;
                         break;
                     }
-                    catch (Exception ex)
+                    catch (Exception)
                     {
                         if (attempts >= 10)
                             throw;

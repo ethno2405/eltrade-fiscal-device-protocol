@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using System.Text;
 using EltradeProtocol.Requests;
 
@@ -7,69 +6,50 @@ namespace EltradeProtocol
 {
     public static class Program
     {
-        static EltradeFiscalDeviceDriver driver;
         static Encoding windows1251 = Encoding.GetEncoding("windows-1251");
 
         static void Main(string[] args)
         {
             Console.OutputEncoding = windows1251;
-            driver = new EltradeFiscalDeviceDriver();
+            using (var driver = new EltradeFiscalDeviceDriver())
+            {
+                driver.Send(new SetDateTime());
+            }
 
-            Console.WriteLine("Sending package...");
+            using (var driver = new EltradeFiscalDeviceDriver())
+            {
+                driver.Send(new OpenFiscalReceipt("qwe", "ED325011-0050-0000012"));
+                driver.Send(new AddFreeTextToFiscalReceipt("Коментар"));
+                driver.Send(new RegisterPlu(1, 1));
+                driver.Send(new RegisterPlu(4444, 1));
+                driver.Send(new RegisterPlu(5555, 1));
+                driver.Send(new RegisterGoods("Салам", "", 'Б', 10, 2));
+                driver.Send(new RegisterGoods("Кучешка радост", "", 'Б', 20.0m, 2, -10.5m, DiscountType.Relative));
+                driver.Send(new AddFreeTextToFiscalReceipt("Втори коментар"));
+                driver.Send(new CalculateTotal("", "", CalculateTotal.PaymentType.Cash, 500.60m));
+                driver.Send(new CloseFiscalReceipt());
+            }
 
-            Send(new SetDateTime());
-            //Send(new OpenFiscalReceipt("qwe", "ED325011-0050-0000012"));
-            //Send(new AddFreeTextToFiscalReceipt("Коментар"));
-            //Send(new RegisterPlu(1, 1));
-            //Send(new RegisterPlu(4444, 1));
-            //Send(new RegisterPlu(5555, 1));
-            //Send(new RegisterGoods("Салам", "", 'Б', 10, 2));
-            //Send(new RegisterGoods("Кучешка радост", "", 'Б', 20.0m, 2, -10.5m, DiscountType.Relative));
-            //Send(new AddFreeTextToFiscalReceipt("Втори коментар"));
-            //Send(new CalculateTotal("", "", CalculateTotal.PaymentType.Cash, 500.60m));
-            //Send(new CloseFiscalReceipt());
+            using (var driver = new EltradeFiscalDeviceDriver())
+            {
+                driver.Send(new OpenOperatorErrorReceipt("asdf", "ED325011-0050-0000012", "44325011", 1419));
+                driver.Send(new RegisterPlu(4444));
+                driver.Send(new RegisterGoods("Кучешка радост", "", 'Б', 20.0m, 2, -10.5m, DiscountType.Relative));
+                driver.Send(new CalculateTotal());
+                driver.Send(new CloseFiscalReceipt());
+            }
 
-            //Send(new OpenOperatorErrorReceipt("asdf", "ED325011-0050-0000012", "44325011", 1419));
-            //Send(new RegisterPlu(4444));
-            //Send(new RegisterGoods("Кучешка радост", "", 'Б', 20.0m, 2, -10.5m, DiscountType.Relative));
-            //Send(new CalculateTotal());
-            //Send(new CloseFiscalReceipt());
+            using (var driver = new EltradeFiscalDeviceDriver())
+            {
+                driver.Send(new GetLastReceiptNumber());
+            }
 
-            //Send(new PrintDailyReportByDepartmentsAndArticles());
-            Send(new GetLastReceiptNumber());
-            driver?.Dispose();
+            using (var driver = new EltradeFiscalDeviceDriver())
+            {
+                driver.Send(new PrintDailyReportByDepartmentsAndArticles());
+            }
 
             Console.ReadLine();
-        }
-
-        static void Send(EltradeFiscalDeviceRequestPackage pkg)
-        {
-            Print($"Request", pkg.Build(false));
-            Console.WriteLine($"Package {pkg.GetType().Name}: {pkg.Command.ToString("x2")} {pkg.DataString}");
-            var response = driver.Send(pkg);
-            PrintResponse(response);
-        }
-
-        static void PrintResponse(EltradeFiscalDeviceResponsePackage response)
-        {
-            Print("Response package", response.Package);
-            Console.WriteLine($"Data package: {response.GetHumanReadableData(windows1251)}");
-            Print("Status package", response.Status);
-            PrintFlags("Data flags", response.Data);
-            PrintFlags("Status flags", response.Status);
-            Console.WriteLine();
-        }
-
-        static void Print(string type, byte[] bytes, string format = "x2")
-        {
-            var package = string.Join("", bytes.Select(x => x.ToString(format)).ToArray()).ToUpper();
-            Console.WriteLine($"{type}: " + package);
-        }
-
-        static void PrintFlags(string type, byte[] bytes)
-        {
-            var package = string.Join(" ", bytes.Select(x => Convert.ToString(x, 2).PadLeft(8, '0')).ToArray());
-            Console.WriteLine($"{type}: " + package);
         }
     }
 }
