@@ -12,7 +12,6 @@ namespace EltradeProtocol
     {
         private SerialPort serialPort;
         private int attempts = 0;
-        private System.Timers.Timer readTimer = new System.Timers.Timer();
         private bool reading;
         private Thread readThread;
         private EltradeFiscalDeviceResponsePackage response;
@@ -20,10 +19,6 @@ namespace EltradeProtocol
         public EltradeFiscalDeviceDriver()
         {
             FindFiscalDevicePort();
-
-            readTimer.Interval = serialPort.ReadTimeout;
-            readTimer.Elapsed += Timer_Elapsed;
-            readTimer.AutoReset = true;
         }
 
         public static bool Ping()
@@ -58,7 +53,6 @@ namespace EltradeProtocol
 
             serialPort.Write(bytes, 0, bytes.Length);
 
-            readTimer.Start();
             readThread.Join();
 
             return response;
@@ -133,12 +127,6 @@ namespace EltradeProtocol
             }
         }
 
-        private void Timer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
-        {
-            readTimer.Stop();
-            ClosePort();
-        }
-
         private void Read()
         {
             var buffer = new byte[serialPort.ReadBufferSize];
@@ -151,9 +139,6 @@ namespace EltradeProtocol
                     response = new EltradeFiscalDeviceResponsePackage(buffer.Take(readBytes).ToArray());
                     if (response.Printing)
                     {
-                        if (readTimer.Interval <= 10000)
-                            readTimer.Interval += 60;
-
                         continue;
                     }
                 }
@@ -183,8 +168,6 @@ namespace EltradeProtocol
             ClosePort();
             serialPort?.Dispose();
             serialPort = null;
-            readTimer?.Dispose();
-            readTimer = null;
             readThread?.Abort();
             readThread = null;
         }
