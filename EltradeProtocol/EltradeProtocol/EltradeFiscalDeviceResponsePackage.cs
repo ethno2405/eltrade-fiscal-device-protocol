@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 
 namespace EltradeProtocol
 {
@@ -35,6 +36,11 @@ namespace EltradeProtocol
         public byte[] Data { get; private set; }
         public byte[] Status { get; private set; }
         public byte Length { get; private set; }
+
+        public string GetHumanReadableData(Encoding encoding)
+        {
+            return encoding.GetString(Data);
+        }
 
         private void ParsePackage() // <01><LEN><SEQ><CMD><DATA><04><STATUS><05><BCC><03>
         {

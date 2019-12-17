@@ -18,16 +18,16 @@ namespace EltradeProtocol
             Console.WriteLine("Sending package...");
 
             Send(new SetDateTime());
-            Send(new OpenFiscalReceipt("qwe", "ED325011-0050-0000012"));
-            Send(new AddFreeTextToFiscalReceipt("Коментар"));
-            Send(new RegisterPlu(1, 1));
-            Send(new RegisterPlu(4444, 1));
-            Send(new RegisterPlu(5555, 1));
-            Send(new RegisterGoods("Салам", "", 'Б', 10, 2));
-            Send(new RegisterGoods("Кучешка радост", "", 'Б', 20.0m, 2, -10.5m, DiscountType.Relative));
-            Send(new AddFreeTextToFiscalReceipt("Втори коментар"));
-            Send(new CalculateTotal("", "", CalculateTotal.PaymentType.Cash, 500.60m));
-            Send(new CloseFiscalReceipt());
+            //Send(new OpenFiscalReceipt("qwe", "ED325011-0050-0000012"));
+            //Send(new AddFreeTextToFiscalReceipt("Коментар"));
+            //Send(new RegisterPlu(1, 1));
+            //Send(new RegisterPlu(4444, 1));
+            //Send(new RegisterPlu(5555, 1));
+            //Send(new RegisterGoods("Салам", "", 'Б', 10, 2));
+            //Send(new RegisterGoods("Кучешка радост", "", 'Б', 20.0m, 2, -10.5m, DiscountType.Relative));
+            //Send(new AddFreeTextToFiscalReceipt("Втори коментар"));
+            //Send(new CalculateTotal("", "", CalculateTotal.PaymentType.Cash, 500.60m));
+            //Send(new CloseFiscalReceipt());
 
             //Send(new OpenOperatorErrorReceipt("asdf", "ED325011-0050-0000012", "44325011", 1419));
             //Send(new RegisterPlu(4444));
@@ -35,7 +35,8 @@ namespace EltradeProtocol
             //Send(new CalculateTotal());
             //Send(new CloseFiscalReceipt());
 
-            Send(new PrintDailyReportByDepartmentsAndArticles());
+            //Send(new PrintDailyReportByDepartmentsAndArticles());
+            Send(new GetLastReceiptNumber());
             driver?.Dispose();
 
             Console.ReadLine();
@@ -52,7 +53,7 @@ namespace EltradeProtocol
         static void PrintResponse(EltradeFiscalDeviceResponsePackage response)
         {
             Print("Response package", response.Package);
-            Print("Data package", response.Data);
+            Console.WriteLine($"Data package: {response.GetHumanReadableData(windows1251)}");
             Print("Status package", response.Status);
             PrintFlags("Data flags", response.Data);
             PrintFlags("Status flags", response.Status);
