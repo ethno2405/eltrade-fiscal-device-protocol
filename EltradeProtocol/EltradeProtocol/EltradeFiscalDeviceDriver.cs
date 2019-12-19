@@ -11,6 +11,8 @@ namespace EltradeProtocol
     public class EltradeFiscalDeviceDriver : IDisposable
     {
         private static readonly ILog log = LogManager.GetLogger(typeof(EltradeFiscalDeviceDriver));
+
+        private const int SynWaitMilliseconds = 60;
         private SerialPort serialPort;
         private int attempts = 0;
         private bool reading;
@@ -42,7 +44,7 @@ namespace EltradeProtocol
                 readThread.Start();
                 readThread.Join();
                 if (response.Data.Length != 0)
-                    log.Debug($"Response data: {response.GetHumanReadableData(Encoding.GetEncoding("windows-1251"))}");
+                    log.Debug($"Response 0x{response.Command.ToString("x2").ToUpper()} => {response.GetHumanReadableData(Encoding.GetEncoding("windows-1251"))}");
             }
             catch (Exception ex)
             {
@@ -98,7 +100,7 @@ namespace EltradeProtocol
                         OpenPort();
 
                         serialPort.Write(bytes, 0, bytes.Length);
-                        Thread.Sleep(100);
+                        Thread.Sleep(serialPort.WriteTimeout);
                         var response = serialPort.ReadExisting();
 
                         if (string.IsNullOrEmpty(response) == false)
@@ -172,10 +174,13 @@ namespace EltradeProtocol
 
             if (serialPort.IsOpen)
             {
-                serialPort.DiscardInBuffer();
-                serialPort.DiscardOutBuffer();
-
-                serialPort.Close();
+                try
+                {
+                    serialPort.DiscardInBuffer();
+                    serialPort.DiscardOutBuffer();
+                    serialPort.Close();
+                }
+                catch (Exception) { }
             }
         }
 
@@ -184,7 +189,6 @@ namespace EltradeProtocol
             var buffer = new byte[serialPort.ReadBufferSize];
             while (reading)
             {
-                // Stupidity
                 try
                 {
                     buffer = new byte[serialPort.ReadBufferSize];
@@ -192,6 +196,7 @@ namespace EltradeProtocol
                     response = new EltradeFiscalDeviceResponsePackage(buffer.Take(readBytes).ToArray());
                     if (response.Printing)
                     {
+                        Thread.Sleep(SynWaitMilliseconds);
                         continue;
                     }
                     else
@@ -222,7 +227,12 @@ namespace EltradeProtocol
             {
                 serialPort.ErrorReceived -= SerialPort_ErrorReceived;
 
-                serialPort.Dispose();
+                try
+                {
+                    serialPort.Dispose();
+                }
+                catch (Exception) { }
+
                 serialPort = null;
             }
         }
