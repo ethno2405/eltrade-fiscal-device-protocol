@@ -28,6 +28,7 @@ namespace EltradeProtocol
 
         public bool InvalidRequest { get; private set; }
         public bool MalformedResponse { get; private set; }
+        public bool Acknowledged { get; private set; }
         public bool Printing { get; private set; }
 
         public byte[] Package { get; }
@@ -50,26 +51,33 @@ namespace EltradeProtocol
                 return;
             }
 
-            var first = Package.First();
-            if (first == SYN)
+            if (Package.All(x => x == SYN))
             {
                 Printing = true;
                 return;
             }
 
-            if (first == NAK)
+
+            if (Package.All(x => x == NAK))
             {
                 InvalidRequest = true;
                 return;
             }
 
-            if (first != Preamble || Package.Last() != Terminator || Package.Contains(Delimiter) == false || Package.Contains(Postamble) == false)
+            if (Package.All(x => x == 1))
+            {
+                Acknowledged = true;
+                return;
+            }
+
+            var payload = Package.SkipWhile(x => x == SYN || x == NAK);
+            if (payload.First() != Preamble || payload.Last() != Terminator || payload.Contains(Delimiter) == false || payload.Contains(Postamble) == false)
             {
                 MalformedResponse = true;
                 return;
             }
 
-            var queue = new Queue<byte>(Package);
+            var queue = new Queue<byte>(payload);
             queue.Dequeue(); // preamble
             Length = queue.Dequeue();
             Seq = queue.Dequeue();
@@ -83,7 +91,7 @@ namespace EltradeProtocol
             var next = queue.Dequeue();
             var result = new List<byte>();
 
-            while (next != to)
+            while (next != to && queue.Count != 0)
             {
                 result.Add(next);
                 next = queue.Dequeue();
