@@ -40,6 +40,7 @@
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Requests\AddFreeTextToFiscalReceipt.cs" />
+    <Compile Include="Requests\CalculateSubtotal.cs" />
     <Compile Include="Requests\CalculateTotal.cs" />
     <Compile Include="Requests\CashTransfer.cs" />
     <Compile Include="Requests\DiscountType.cs" />
