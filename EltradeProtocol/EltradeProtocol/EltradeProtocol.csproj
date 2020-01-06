@@ -45,6 +45,7 @@
     <Compile Include="Requests\DiscountType.cs" />
     <Compile Include="Requests\GetFiscalTransactionStatus.cs" />
     <Compile Include="Requests\GetLastReceiptNumber.cs" />
+    <Compile Include="Requests\GetReceiptStatus.cs" />
     <Compile Include="Requests\GetStatuses.cs" />
     <Compile Include="Requests\CloseFiscalReceipt.cs" />
     <Compile Include="EltradeFiscalDeviceDriver.cs" />
