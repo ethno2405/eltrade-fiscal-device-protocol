@@ -14,9 +14,9 @@ namespace EltradeProtocol.Requests
             if (discount != 0)
             {
                 if (discountType == DiscountType.Absolute)
-                    AppendData($";{discount}");
+                    AppendData($";{Math.Round(discount, 2)}");
                 else if (discountType == DiscountType.Relative)
-                    AppendData($",{discount}");
+                    AppendData($",{Math.Round(discount, 2)}");
                 else
                     throw new NotSupportedException($"Not supported discount type '{discountType}'");
             }

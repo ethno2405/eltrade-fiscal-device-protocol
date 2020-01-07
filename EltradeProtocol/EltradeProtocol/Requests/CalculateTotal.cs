@@ -20,7 +20,8 @@ namespace EltradeProtocol.Requests
 
         public CalculateTotal(string line1, string line2, PaymentType paymentType, decimal amount) : this(line1, line2)
         {
-            if (amount < 0) throw new ArgumentOutOfRangeException(nameof(amount), $"Payment amount '{amount}' must be non-negative");
+            var roundedAmount = Math.Round(amount, 2);
+            if (roundedAmount < 0) throw new ArgumentOutOfRangeException(nameof(amount), $"Payment amount '{amount}' must be non-negative");
 
             switch (paymentType)
             {
@@ -40,7 +41,7 @@ namespace EltradeProtocol.Requests
                     throw new NotSupportedException($"Not supported payment type '{paymentType}'");
             }
 
-            AppendData(amount.ToString(CultureInfo.InvariantCulture));
+            AppendData(roundedAmount.ToString(CultureInfo.InvariantCulture));
         }
 
         public enum PaymentType
