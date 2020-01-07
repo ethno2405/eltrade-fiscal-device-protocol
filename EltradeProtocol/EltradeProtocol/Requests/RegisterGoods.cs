@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 
 namespace EltradeProtocol.Requests
 {
@@ -13,7 +14,7 @@ namespace EltradeProtocol.Requests
             AppendData(Truncate(articleDescription, 30));
             AppendData(Tab);
             AppendData(taxType.ToString());
-            AppendData(unitPrice.ToString());
+            AppendData(unitPrice.ToString(CultureInfo.InvariantCulture));
 
             if (quantity != 1)
                 AppendData($"*{quantity}");

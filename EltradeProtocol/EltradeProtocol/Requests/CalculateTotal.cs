@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 
 namespace EltradeProtocol.Requests
 {
@@ -39,7 +40,7 @@ namespace EltradeProtocol.Requests
                     throw new NotSupportedException($"Not supported payment type '{paymentType}'");
             }
 
-            AppendData(amount.ToString());
+            AppendData(amount.ToString(CultureInfo.InvariantCulture));
         }
 
         public enum PaymentType
