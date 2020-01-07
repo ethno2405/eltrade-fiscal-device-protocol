@@ -37,6 +37,12 @@ namespace EltradeProtocol.Requests
                 case PaymentType.Cheque:
                     AppendData("N");
                     break;
+                case PaymentType.Voucher:
+                    AppendData("C");
+                    break;
+                case PaymentType.ExternalVoucher:
+                    AppendData("D");
+                    break;
                 default:
                     throw new NotSupportedException($"Not supported payment type '{paymentType}'");
             }
@@ -49,7 +55,9 @@ namespace EltradeProtocol.Requests
             Cash,
             BankTransfer,
             CreditCard,
-            Cheque
+            Cheque,
+            Voucher,
+            ExternalVoucher
         }
     }
 }
