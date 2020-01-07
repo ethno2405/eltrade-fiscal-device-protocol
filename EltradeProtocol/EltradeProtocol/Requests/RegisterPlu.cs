@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 
 namespace EltradeProtocol.Requests
 {
@@ -12,19 +13,19 @@ namespace EltradeProtocol.Requests
         public RegisterPlu(int plu, decimal quantity) : base(0x3a)
         {
             AppendData(plu.ToString());
-            AppendData($"*{quantity}");
+            AppendData($"*{Math.Round(quantity, 2).ToString(CultureInfo.InvariantCulture)}");
         }
 
         public RegisterPlu(int plu, decimal quantity, decimal discount, DiscountType discountType) : base(0x3a)
         {
             AppendData(plu.ToString());
-            AppendData($"*{quantity}");
+            AppendData($"*{Math.Round(quantity, 2).ToString(CultureInfo.InvariantCulture)}");
             if (discount != 0)
             {
                 if (discountType == DiscountType.Absolute)
-                    AppendData($";{Math.Round(discount, 2)}");
+                    AppendData($";{Math.Round(discount, 2).ToString(CultureInfo.InvariantCulture)}");
                 else if (discountType == DiscountType.Relative)
-                    AppendData($",{Math.Round(discount, 2)}");
+                    AppendData($",{Math.Round(discount, 2).ToString(CultureInfo.InvariantCulture)}");
                 else
                     throw new NotSupportedException($"Not supported discount type '{discountType}'");
             }
@@ -36,13 +37,13 @@ namespace EltradeProtocol.Requests
             AppendData(Tab);
             AppendData(department.ToString());
             AppendData(Tab);
-            AppendData($"*{quantity}");
+            AppendData($"*{Math.Round(quantity, 2).ToString(CultureInfo.InvariantCulture)}");
             if (discount != 0)
             {
                 if (discountType == DiscountType.Absolute)
-                    AppendData($";{Math.Round(discount, 2)}");
+                    AppendData($";{Math.Round(discount, 2).ToString(CultureInfo.InvariantCulture)}");
                 else if (discountType == DiscountType.Relative)
-                    AppendData($",{Math.Round(discount, 2)}");
+                    AppendData($",{Math.Round(discount, 2).ToString(CultureInfo.InvariantCulture)}");
                 else
                     throw new NotSupportedException($"Not supported discount type '{discountType}'");
             }

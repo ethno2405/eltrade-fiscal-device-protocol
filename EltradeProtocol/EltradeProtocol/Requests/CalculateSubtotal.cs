@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 
 namespace EltradeProtocol.Requests
 {
@@ -14,9 +15,9 @@ namespace EltradeProtocol.Requests
             if (discount != 0)
             {
                 if (discountType == DiscountType.Absolute)
-                    AppendData($";{Math.Round(discount, 2)}");
+                    AppendData($";{Math.Round(discount, 2).ToString(CultureInfo.InvariantCulture)}");
                 else if (discountType == DiscountType.Relative)
-                    AppendData($",{Math.Round(discount, 2)}");
+                    AppendData($",{Math.Round(discount, 2).ToString(CultureInfo.InvariantCulture)}");
                 else
                     throw new NotSupportedException($"Not supported discount type '{discountType}'");
             }

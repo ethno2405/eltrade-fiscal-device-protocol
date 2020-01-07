@@ -17,14 +17,14 @@ namespace EltradeProtocol.Requests
             AppendData(Math.Round(unitPrice, 2).ToString(CultureInfo.InvariantCulture));
 
             if (quantity != 1)
-                AppendData($"*{quantity}");
+                AppendData($"*{Math.Round(quantity, 2).ToString(CultureInfo.InvariantCulture)}");
 
             if (discount != 0)
             {
                 if (discountType == DiscountType.Absolute)
-                    AppendData($";{Math.Round(discount, 2)}");
+                    AppendData($";{Math.Round(discount, 2).ToString(CultureInfo.InvariantCulture)}");
                 else if (discountType == DiscountType.Relative)
-                    AppendData($",{Math.Round(discount, 2)}");
+                    AppendData($",{Math.Round(discount, 2).ToString(CultureInfo.InvariantCulture)}");
                 else
                     throw new NotSupportedException($"Not supported discount type '{discountType}'");
             }
