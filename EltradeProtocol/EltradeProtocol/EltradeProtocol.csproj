@@ -62,6 +62,8 @@
     <Compile Include="Requests\PrintDailyReportByDepartmentsAndArticles.cs" />
     <Compile Include="Requests\PrintDailyReport.cs" />
     <Compile Include="Requests\PrintDuplicateReceipt.cs" />
+    <Compile Include="Requests\PrintMonthlyFiscalReport.cs" />
+    <Compile Include="Requests\PrintYearlyFiscalReport.cs" />
     <Compile Include="Requests\RegisterGoods.cs" />
     <Compile Include="Requests\RegisterPlu.cs" />
     <Compile Include="Requests\SetDateTime.cs" />
