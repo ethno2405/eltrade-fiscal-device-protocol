@@ -237,12 +237,11 @@ namespace EltradeProtocol
             {
                 try
                 {
-                    var response = driver.Send(new GetStatuses());
+                    var response = driver.Send(new SetDateTime());
                     if (response.Package.Length == 0)
                         return new PingResult("Status: Response package length is 0");
 
-                    var dateTimeResponse = driver.Send(new SetDateTime());
-                    return dateTimeResponse.Package.Length > 0 ? new PingResult() : new PingResult($"SetCurrentDateTime: Response package length is {dateTimeResponse.Package.Length}");
+                    return new PingResult();
                 }
                 catch (Exception ex)
                 {
