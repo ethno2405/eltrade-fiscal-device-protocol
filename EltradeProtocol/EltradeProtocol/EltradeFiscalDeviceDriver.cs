@@ -34,7 +34,6 @@ namespace EltradeProtocol
             try
             {
                 readThread = new Thread(Read);
-                OpenPort();
 
                 var bytes = package.Build(true);
                 reading = true;
@@ -50,10 +49,6 @@ namespace EltradeProtocol
             {
                 log.Error("PAFA!", ex);
                 throw;
-            }
-            finally
-            {
-                ClosePort();
             }
 
             return response;
@@ -133,7 +128,6 @@ namespace EltradeProtocol
             finally
             {
                 attempts = 0;
-                ClosePort();
             }
 
             log.Error($"Unable to find fiscal device on port {portName}. Check cable connection!");
