@@ -74,7 +74,7 @@ namespace EltradeProtocol
                 readThread.Start();
                 readThread.Join();
                 if (response.Data.Length != 0)
-                    log.Debug($"0x{response.Command.ToString("x2").ToUpper()} Response => {response.GetHumanReadableData(Encoding.GetEncoding("windows-1251"))}");
+                    log.Debug($"0x{response.Command.ToString("x2").ToUpper()} Response => {response.GetHumanReadableData()}");
             }
             catch (Exception ex)
             {
