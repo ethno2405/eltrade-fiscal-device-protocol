@@ -19,11 +19,39 @@ namespace EltradeProtocol
         private Thread readThread;
         private EltradeFiscalDeviceResponsePackage response;
         private static string lastWorkingPort = string.Empty;
+        private static string serialNumber = string.Empty;
+        private static string fiscalNumber = string.Empty;
         private static readonly object mutex = new object();
 
         public EltradeFiscalDeviceDriver()
         {
             FindFiscalDevicePort();
+        }
+
+        public static string GetSerialNumber()
+        {
+            if (string.IsNullOrEmpty(serialNumber))
+            {
+                using (var driver = new EltradeFiscalDeviceDriver())
+                {
+                    return serialNumber;
+                }
+            }
+
+            return serialNumber;
+        }
+
+        public static string GetFiscalNumber()
+        {
+            if (string.IsNullOrEmpty(fiscalNumber))
+            {
+                using (var driver = new EltradeFiscalDeviceDriver())
+                {
+                    return fiscalNumber;
+                }
+            }
+
+            return fiscalNumber;
         }
 
         public EltradeFiscalDeviceResponsePackage Send(EltradeFiscalDeviceRequestPackage package)
@@ -33,6 +61,9 @@ namespace EltradeProtocol
             response = EltradeFiscalDeviceResponsePackage.Empty;
             try
             {
+                serialPort.DiscardInBuffer();
+                serialPort.DiscardOutBuffer();
+
                 readThread = new Thread(Read);
 
                 var bytes = package.Build(true);
@@ -56,7 +87,7 @@ namespace EltradeProtocol
 
         private void FindFiscalDevicePort()
         {
-            byte[] bytes = new GetStatuses().Build();
+            byte[] bytes = new GetPrinterDiagnosticInfo().Build();
 
             if (CheckPortConnectivity(lastWorkingPort, bytes))
             {
@@ -96,20 +127,36 @@ namespace EltradeProtocol
 
                         serialPort.Write(bytes, 0, bytes.Length);
                         Thread.Sleep(serialPort.WriteTimeout);
-                        var response = serialPort.ReadExisting();
 
+                        var buffer = new byte[serialPort.ReadBufferSize];
+                        var readBytes = serialPort.Read(buffer, 0, serialPort.ReadBufferSize);
+                        var response = new EltradeFiscalDeviceResponsePackage(buffer.Take(readBytes).ToArray()).GetHumanReadableData();
                         if (string.IsNullOrEmpty(response) == false)
                         {
                             lock (mutex)
                             {
                                 lastWorkingPort = portName;
-                                log.Info($"----------Fiscal device port {lastWorkingPort}----------");
+                                var responseElements = response.Split(',');
+                                serialNumber = responseElements[5];
+                                fiscalNumber = responseElements[6];
+                                log.Info($"---------- Fiscal device port {lastWorkingPort}, serial number {serialNumber}, fiscal number {fiscalNumber} ----------");
                             }
 
                             return true;
                         }
 
                         attempts++;
+                    }
+                    catch (TimeoutException)
+                    {
+                        lock (mutex)
+                        {
+                            lastWorkingPort = string.Empty;
+                            serialNumber = string.Empty;
+                            fiscalNumber = string.Empty;
+                        }
+
+                        return false;
                     }
                     catch (Exception)
                     {
