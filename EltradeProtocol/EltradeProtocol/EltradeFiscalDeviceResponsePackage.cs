@@ -38,6 +38,11 @@ namespace EltradeProtocol
         public byte[] Status { get; private set; }
         public byte Length { get; private set; }
 
+        public string GetHumanReadableData()
+        {
+            return GetHumanReadableData(Encoding.GetEncoding("windows-1251"));
+        }
+
         public string GetHumanReadableData(Encoding encoding)
         {
             return encoding.GetString(Data);
