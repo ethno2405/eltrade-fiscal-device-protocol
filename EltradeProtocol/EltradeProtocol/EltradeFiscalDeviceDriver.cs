@@ -13,46 +13,40 @@ namespace EltradeProtocol
         private static readonly ILog log = LogManager.GetLogger(typeof(EltradeFiscalDeviceDriver));
 
         private const int SynWaitMilliseconds = 60;
-        private SerialPort serialPort;
-        private int attempts = 0;
-        private bool reading;
-        private Thread readThread;
-        private EltradeFiscalDeviceResponsePackage response;
-        private static string lastWorkingPort = string.Empty;
-        private static string serialNumber = string.Empty;
-        private static string fiscalNumber = string.Empty;
         private static readonly object mutex = new object();
+        private static readonly object instanceMutex = new object();
 
-        public EltradeFiscalDeviceDriver()
+        private static string lastWorkingPort = string.Empty;
+        private static EltradeFiscalDeviceDriver instance;
+
+        private SerialPort serialPort;
+        private bool reading;
+        private EltradeFiscalDeviceResponsePackage response;
+
+        private EltradeFiscalDeviceDriver()
         {
             FindFiscalDevicePort();
         }
 
-        public static string GetSerialNumber()
+        public static EltradeFiscalDeviceDriver GetInstance()
         {
-            if (string.IsNullOrEmpty(serialNumber))
+            if (ReferenceEquals(null, instance))
             {
-                using (var driver = new EltradeFiscalDeviceDriver())
+                lock (instanceMutex)
                 {
-                    return serialNumber;
+                    if (ReferenceEquals(null, instance))
+                    {
+                        instance = new EltradeFiscalDeviceDriver();
+                    }
                 }
             }
 
-            return serialNumber;
+            return instance;
         }
 
-        public static string GetFiscalNumber()
-        {
-            if (string.IsNullOrEmpty(fiscalNumber))
-            {
-                using (var driver = new EltradeFiscalDeviceDriver())
-                {
-                    return fiscalNumber;
-                }
-            }
+        public string FiscalNumber { get; private set; }
 
-            return fiscalNumber;
-        }
+        public string SerialNumber { get; private set; }
 
         public EltradeFiscalDeviceResponsePackage Send(EltradeFiscalDeviceRequestPackage package)
         {
@@ -62,18 +56,25 @@ namespace EltradeProtocol
             try
             {
                 serialPort.DiscardInBuffer();
-                serialPort.DiscardOutBuffer();
+                log.Debug("DiscardInBuffer");
 
-                readThread = new Thread(Read);
+                serialPort.DiscardOutBuffer();
+                log.Debug("DiscardOutBuffer");
+
+                serialPort.DataReceived += Read;
 
                 var bytes = package.Build(true);
                 reading = true;
                 log.Debug($"0x{package.Command.ToString("x2").ToUpper()} => {package.GetType().Name} {package.DataString}");
                 serialPort.Write(bytes, 0, bytes.Length);
 
-                readThread.Start();
-                readThread.Join();
-                if (response.Data.Length != 0)
+                while (reading)
+                    Thread.Sleep(10); // KnowHow: https://social.msdn.microsoft.com/Forums/en-US/ce8ce1a3-64ed-4f26-b9ad-e2ff1d3be0a5/serial-port-hangs-whilst-closing?forum=Vsexpressvcs
+
+                log.Debug("Reading finished");
+                serialPort.DataReceived -= Read;
+
+                if (response?.Data?.Length != 0)
                     log.Debug($"0x{response.Command.ToString("x2").ToUpper()} Response => {response.GetHumanReadableData()}");
             }
             catch (Exception ex)
@@ -107,18 +108,30 @@ namespace EltradeProtocol
 
         private bool CheckPortConnectivity(string portName, byte[] bytes)
         {
+            log.Debug("Start CheckPortConnectivity");
             if (string.IsNullOrEmpty(portName))
                 return false;
 
             try
             {
-                serialPort = new SerialPort(portName, 115200, Parity.None, 8, StopBits.One);
+                if (ReferenceEquals(null, serialPort) || serialPort.PortName != portName)
+                {
+                    if (serialPort?.PortName != portName)
+                    {
+                        log.Debug($"Disposing old port {serialPort?.PortName}");
+                        serialPort?.Dispose();
+                    }
 
-                serialPort.ReadTimeout = 500;
-                serialPort.WriteTimeout = 500;
-                serialPort.Encoding = Encoding.ASCII;
-                serialPort.ErrorReceived += SerialPort_ErrorReceived;
+                    log.Debug($"Creating serial port {portName}");
+                    serialPort = new SerialPort(portName, 115200, Parity.None, 8, StopBits.One);
 
+                    serialPort.ReadTimeout = 500;
+                    serialPort.WriteTimeout = 500;
+                    serialPort.Encoding = Encoding.ASCII;
+                    serialPort.ErrorReceived += SerialPort_ErrorReceived;
+                }
+
+                var attempts = 0;
                 while (attempts < 10)
                 {
                     try
@@ -126,10 +139,11 @@ namespace EltradeProtocol
                         OpenPort();
 
                         serialPort.Write(bytes, 0, bytes.Length);
-                        Thread.Sleep(serialPort.WriteTimeout);
+                        Thread.Sleep(SynWaitMilliseconds);
 
                         var buffer = new byte[serialPort.ReadBufferSize];
                         var readBytes = serialPort.Read(buffer, 0, serialPort.ReadBufferSize);
+
                         var response = new EltradeFiscalDeviceResponsePackage(buffer.Take(readBytes).ToArray()).GetHumanReadableData();
                         if (string.IsNullOrEmpty(response) == false)
                         {
@@ -137,11 +151,12 @@ namespace EltradeProtocol
                             {
                                 lastWorkingPort = portName;
                                 var responseElements = response.Split(',');
-                                serialNumber = responseElements[5];
-                                fiscalNumber = responseElements[6];
-                                log.Info($"---------- Fiscal device port {lastWorkingPort}, serial number {serialNumber}, fiscal number {fiscalNumber} ----------");
+                                SerialNumber = responseElements[5];
+                                FiscalNumber = responseElements[6];
+                                log.Info($"---------- Fiscal device port {lastWorkingPort}, serial number {SerialNumber}, fiscal number {FiscalNumber} ----------");
                             }
 
+                            log.Debug("End CheckPortConnectivity");
                             return true;
                         }
 
@@ -152,29 +167,30 @@ namespace EltradeProtocol
                         lock (mutex)
                         {
                             lastWorkingPort = string.Empty;
-                            serialNumber = string.Empty;
-                            fiscalNumber = string.Empty;
+                            SerialNumber = string.Empty;
+                            FiscalNumber = string.Empty;
                         }
 
+                        log.Debug("End CheckPortConnectivity. Timeout.");
                         return false;
                     }
-                    catch (Exception)
+                    catch (Exception ex)
                     {
+                        log.Error(ex.Message, ex);
                         if (attempts >= 10)
+                        {
+                            log.Debug("End CheckPortConnectivity. Error.");
                             throw;
+                        }
 
                         attempts++;
-                        Thread.Sleep(1000 * attempts);
+                        Thread.Sleep(200 * attempts);
                     }
                 }
             }
             catch (Exception ex)
             {
-                log.Error($"Attempt: {attempts}", ex);
-            }
-            finally
-            {
-                attempts = 0;
+                log.Error(ex.Message, ex);
             }
 
             log.Error($"Unable to find fiscal device on port {portName}. Check cable connection!");
@@ -183,35 +199,51 @@ namespace EltradeProtocol
 
         private void OpenPort()
         {
+            log.Debug($"Start OpenPort. {serialPort.PortName}, {serialPort.IsOpen}");
             if (serialPort.IsOpen == false)
             {
+                var attempts = 0;
                 while (attempts < 10)
                 {
                     try
                     {
                         serialPort.Open();
+                        log.Debug($"serialPort.Open()");
                         attempts = 0;
                         break;
                     }
-                    catch (Exception)
+                    catch (Exception ex)
                     {
                         if (attempts >= 10)
+                        {
+                            log.Debug($"End OpenPort. Error {ex.Message}");
                             throw;
+                        }
 
                         attempts++;
-                        Thread.Sleep(1000 * attempts);
+                        Thread.Sleep(200 * attempts);
                     }
                 }
             }
 
-            serialPort.DiscardInBuffer();
-            serialPort.DiscardOutBuffer();
+            if (serialPort.IsOpen)
+            {
+                log.Debug($"OpenPort. Discarding buffers");
+                serialPort.DiscardInBuffer();
+                serialPort.DiscardOutBuffer();
+            }
+
+            log.Debug($"End OpenPort");
         }
 
         private void ClosePort()
         {
+            log.Debug($"Start ClosePort");
             if (serialPort is null)
+            {
+                log.Debug($"End ClosePort. serial port is null");
                 return;
+            }
 
             if (serialPort.IsOpen)
             {
@@ -221,19 +253,28 @@ namespace EltradeProtocol
                     serialPort.DiscardOutBuffer();
                     serialPort.Close();
                 }
-                catch (Exception) { }
+                catch (Exception ex)
+                {
+                    log.Error(ex.Message, ex);
+                }
             }
+
+            log.Debug($"End ClosePort");
         }
 
-        private void Read()
+        private void Read(object sender, SerialDataReceivedEventArgs e)
         {
-            var buffer = new byte[serialPort.ReadBufferSize];
+            var serialPortSender = sender as SerialPort;
+
+            var buffer = new byte[serialPortSender.ReadBufferSize];
             while (reading)
             {
                 try
                 {
-                    buffer = new byte[serialPort.ReadBufferSize];
-                    var readBytes = serialPort.Read(buffer, 0, serialPort.ReadBufferSize);
+                    buffer = new byte[serialPortSender.ReadBufferSize];
+                    log.Debug($"Reading...");
+                    var readBytes = serialPortSender.Read(buffer, 0, serialPortSender.ReadBufferSize);
+                    log.Debug($"Read {readBytes} bytes");
                     response = new EltradeFiscalDeviceResponsePackage(buffer.Take(readBytes).ToArray());
                     if (response.Printing)
                     {
@@ -245,9 +286,13 @@ namespace EltradeProtocol
                         reading = false;
                     }
                 }
-                catch (TimeoutException) { }
-                catch (Exception)
+                catch (TimeoutException ex)
                 {
+                    log.Error(ex.Message, ex);
+                }
+                catch (Exception ex)
+                {
+                    log.Error(ex.Message, ex);
                     reading = false;
                 }
             }
@@ -255,14 +300,12 @@ namespace EltradeProtocol
 
         private void SerialPort_ErrorReceived(object sender, SerialErrorReceivedEventArgs e)
         {
-            ClosePort();
+            log.Error($"SerialPort_ErrorReceived {e.EventType}");
         }
 
         public void Dispose()
         {
-            readThread?.Abort();
-            readThread = null;
-
+            log.Debug($"Start Dispose");
             ClosePort();
             if (serialPort is null == false)
             {
@@ -276,24 +319,31 @@ namespace EltradeProtocol
 
                 serialPort = null;
             }
+
+            log.Debug($"Instance is null {instance is null}");
+            if (instance is null == false)
+                lock (instanceMutex)
+                {
+                    if (instance is null == false)
+                        instance = null;
+                }
+
+            log.Debug($"End Dispose");
         }
 
-        public static PingResult Ping()
+        public PingResult Ping()
         {
-            using (EltradeFiscalDeviceDriver driver = new EltradeFiscalDeviceDriver())
+            try
             {
-                try
-                {
-                    var response = driver.Send(new SetDateTime());
-                    if (response.Package.Length == 0)
-                        return new PingResult("Status: Response package length is 0");
+                var response = Send(new SetDateTime());
+                if (response.Package.Length == 0)
+                    return new PingResult("Status: Response package length is 0");
 
-                    return new PingResult();
-                }
-                catch (Exception ex)
-                {
-                    return new PingResult(ex);
-                }
+                return new PingResult();
+            }
+            catch (Exception ex)
+            {
+                return new PingResult(ex);
             }
         }
     }
