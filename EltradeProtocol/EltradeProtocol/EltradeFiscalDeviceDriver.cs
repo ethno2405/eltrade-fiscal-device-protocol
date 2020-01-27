@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.IO.Ports;
 using System.Linq;
 using System.Text;
@@ -55,12 +56,6 @@ namespace EltradeProtocol
             response = EltradeFiscalDeviceResponsePackage.Empty;
             try
             {
-                serialPort.DiscardInBuffer();
-                log.Debug("DiscardInBuffer");
-
-                serialPort.DiscardOutBuffer();
-                log.Debug("DiscardOutBuffer");
-
                 serialPort.DataReceived += Read;
 
                 var bytes = package.Build(true);
@@ -71,11 +66,16 @@ namespace EltradeProtocol
                 while (reading)
                     Thread.Sleep(10); // KnowHow: https://social.msdn.microsoft.com/Forums/en-US/ce8ce1a3-64ed-4f26-b9ad-e2ff1d3be0a5/serial-port-hangs-whilst-closing?forum=Vsexpressvcs
 
-                log.Debug("Reading finished");
                 serialPort.DataReceived -= Read;
 
                 if (response?.Data?.Length != 0)
                     log.Debug($"0x{response.Command.ToString("x2").ToUpper()} Response => {response.GetHumanReadableData()}");
+            }
+            catch (IOException ex)
+            {
+                log.Warn("Repopening port", ex);
+                Dispose();
+                FindFiscalDevicePort();
             }
             catch (Exception ex)
             {
@@ -249,8 +249,6 @@ namespace EltradeProtocol
             {
                 try
                 {
-                    serialPort.DiscardInBuffer();
-                    serialPort.DiscardOutBuffer();
                     serialPort.Close();
                 }
                 catch (Exception ex)
@@ -272,9 +270,7 @@ namespace EltradeProtocol
                 try
                 {
                     buffer = new byte[serialPortSender.ReadBufferSize];
-                    log.Debug($"Reading...");
                     var readBytes = serialPortSender.Read(buffer, 0, serialPortSender.ReadBufferSize);
-                    log.Debug($"Read {readBytes} bytes");
                     response = new EltradeFiscalDeviceResponsePackage(buffer.Take(readBytes).ToArray());
                     if (response.Printing)
                     {
