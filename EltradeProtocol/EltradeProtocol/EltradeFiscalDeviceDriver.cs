@@ -331,15 +331,23 @@ namespace EltradeProtocol
             log.Debug($"End Dispose");
         }
 
-        public PingResult Ping()
+        public static PingResult Ping()
         {
             try
             {
-                var response = Send(new SetDateTime());
-                if (response.Package.Length == 0)
-                    return new PingResult("Status: Response package length is 0");
+                using (var driver = GetInstance())
+                {
+                    for (int i = 0; i < 3; i++)
+                    {
+                        var response = driver.Send(new SetDateTime());
+                        if (response.Package.Length == 0)
+                            continue;
+                        else
+                            return new PingResult();
+                    }
+                }
 
-                return new PingResult();
+                return new PingResult("SetDateTime: Response package length is 0");
             }
             catch (Exception ex)
             {
