@@ -44,9 +44,9 @@ namespace EltradeProtocol
             return instance;
         }
 
-        public string FiscalNumber { get; private set; }
+        public static string FiscalNumber { get; private set; }
 
-        public string SerialNumber { get; private set; }
+        public static string SerialNumber { get; private set; }
 
         public EltradeFiscalDeviceResponsePackage Send(EltradeFiscalDeviceRequestPackage package)
         {
