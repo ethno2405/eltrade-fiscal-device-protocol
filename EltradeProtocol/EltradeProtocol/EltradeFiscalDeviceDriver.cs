@@ -49,6 +49,11 @@ namespace EltradeProtocol
 
         public static string SerialNumber { get; private set; }
 
+        public EltradeTransaction BeginTransaction()
+        {
+            return new EltradeTransaction(this);
+        }
+
         public EltradeFiscalDeviceResponsePackage Send(EltradeFiscalDeviceRequestPackage package)
         {
             if (ReferenceEquals(null, package)) throw new ArgumentNullException(nameof(package));
