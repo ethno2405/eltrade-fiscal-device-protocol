@@ -68,7 +68,8 @@ namespace EltradeProtocol
                 log.Debug($"0x{package.Command.ToString("x2").ToUpper()} => {package.GetType().Name} {package.DataString}");
                 serialPort.Write(bytes, 0, bytes.Length);
 
-                while (reading)
+                var wait = 0;
+                while (reading && wait++ < 500) // mynkow
                     Thread.Sleep(10); // KnowHow: https://social.msdn.microsoft.com/Forums/en-US/ce8ce1a3-64ed-4f26-b9ad-e2ff1d3be0a5/serial-port-hangs-whilst-closing?forum=Vsexpressvcs
 
                 serialPort.DataReceived -= Read;
@@ -79,12 +80,14 @@ namespace EltradeProtocol
             catch (IOException ex)
             {
                 log.Warn("Repopening port", ex);
+                response = null;//mynkow
                 Dispose();
                 FindFiscalDevicePort();
             }
             catch (Exception ex)
             {
                 log.Error("PAFA!", ex);
+                response = null;//mynkow
                 throw;
             }
 
@@ -137,7 +140,7 @@ namespace EltradeProtocol
                 }
 
                 var attempts = 0;
-                while (attempts < 10)
+                while (attempts < 5)
                 {
                     try
                     {
@@ -182,14 +185,14 @@ namespace EltradeProtocol
                     catch (Exception ex)
                     {
                         log.Error(ex.Message, ex);
-                        if (attempts >= 10)
+                        if (attempts >= 5)
                         {
                             log.Debug("End CheckPortConnectivity. Error.");
                             throw;
                         }
 
                         attempts++;
-                        Thread.Sleep(200 * attempts);
+                        Thread.Sleep(200);
                     }
                 }
             }
@@ -208,7 +211,7 @@ namespace EltradeProtocol
             if (serialPort.IsOpen == false)
             {
                 var attempts = 0;
-                while (attempts < 10)
+                while (attempts < 5)
                 {
                     try
                     {
@@ -219,14 +222,14 @@ namespace EltradeProtocol
                     }
                     catch (Exception ex)
                     {
-                        if (attempts >= 10)
+                        if (attempts >= 5)
                         {
                             log.Debug($"End OpenPort. Error {ex.Message}");
                             throw;
                         }
 
                         attempts++;
-                        Thread.Sleep(200 * attempts);
+                        Thread.Sleep(200);
                     }
                 }
             }
@@ -290,10 +293,12 @@ namespace EltradeProtocol
                 catch (TimeoutException ex)
                 {
                     log.Error(ex.Message, ex);
+                    response = null;//mynkow
                 }
                 catch (Exception ex)
                 {
                     log.Error(ex.Message, ex);
+                    response = null;//mynkow
                     reading = false;
                 }
             }
@@ -341,7 +346,7 @@ namespace EltradeProtocol
                     for (int i = 0; i < 3; i++)
                     {
                         var response = driver.Send(new SetDateTime());
-                        if (response.Package.Length == 0)
+                        if (response?.Package.Length == 0)
                             continue;
                         else
                             return new PingResult();
