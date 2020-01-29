@@ -23,7 +23,7 @@ namespace EltradeProtocol
             return Enqueue(request, null);
         }
 
-        public EltradeTransaction Enqueue(EltradeFiscalDeviceRequestPackage request, Action<EltradeFiscalDeviceResponsePackage> then)
+        public EltradeTransaction Enqueue(EltradeFiscalDeviceRequestPackage request, Func<EltradeFiscalDeviceResponsePackage, bool> then)
         {
             if (request is null) throw new ArgumentNullException(nameof(request));
 
@@ -42,7 +42,7 @@ namespace EltradeProtocol
                 var request = requests.Dequeue();
                 EltradeFiscalDeviceResponsePackage response = null;
                 var success = false;
-                for (int i = 0; i < 100; i++)
+                for (int i = 0; i < 10; i++)
                 {
                     try
                     {
@@ -65,7 +65,12 @@ namespace EltradeProtocol
                     return;
                 }
 
-                request.Then?.Invoke(response);
+                if (request.Then is null)
+                    continue;
+
+                var @continue = request.Then(response);
+                if (@continue == false)
+                    requests.Clear();
             }
         }
 
@@ -82,14 +87,14 @@ namespace EltradeProtocol
                 Request = request ?? throw new ArgumentNullException(nameof(request));
             }
 
-            public RequestCallback(EltradeFiscalDeviceRequestPackage request, Action<EltradeFiscalDeviceResponsePackage> then)
+            public RequestCallback(EltradeFiscalDeviceRequestPackage request, Func<EltradeFiscalDeviceResponsePackage, bool> then)
             {
                 Request = request ?? throw new ArgumentNullException(nameof(request));
                 Then = then;
             }
 
             public EltradeFiscalDeviceRequestPackage Request { get; }
-            public Action<EltradeFiscalDeviceResponsePackage> Then { get; }
+            public Func<EltradeFiscalDeviceResponsePackage, bool> Then { get; }
         }
     }
 }
