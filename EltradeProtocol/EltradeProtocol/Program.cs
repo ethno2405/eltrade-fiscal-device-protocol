@@ -41,6 +41,7 @@ namespace EltradeProtocol
                 transaction.Enqueue(new GetLastReceiptNumber(), x =>
                 {
                     Console.WriteLine(x.GetHumanReadableData());
+                    return true;
                 });
 
                 transaction.Commit();
